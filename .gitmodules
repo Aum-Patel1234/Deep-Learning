@@ -1,0 +1,3 @@
+[submodule "computer_vision/image_processing"]
+	path = computer_vision/image_processing
+	url = git@github.com:Aum-Patel1234/image_processing.git
