@@ -1,0 +1,7 @@
+CNN from scratch (without PyTorch conv layers)
+Mini autograd engine
+ResNet implementation
+U-Net
+Object Detection
+Vision Transformer
+Reproduce a research paper
