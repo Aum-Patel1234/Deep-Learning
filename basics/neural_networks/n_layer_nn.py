@@ -1,6 +1,7 @@
 from functools import cache
 import numpy as np
 from typing import Any, Dict, Tuple, List
+from copy import deepcopy
 
 SIGMOID_ACTIVATION: str = "sigmoid"
 RELU_ACTIVATION: str = "relu"
@@ -34,6 +35,39 @@ class BaseClass:
         m = Y.shape[1]
         cost = (-1.0 / m) * np.sum(Y * np.log(A) + (1 - Y) * np.log(1 - A))
         return np.squeeze(cost)
+
+    # TODO: derive them
+    def _linear_backward(self, dZ: np.ndarray, cache):
+        A_prev, W, b = cache
+        m = A_prev.shape[1]
+
+        dW = (1 / m) * dZ @ A_prev.T
+        db = (1 / m) * np.sum(dZ, axis=1, keepdims=True)
+        dA_prev = W.T @ dZ
+
+        assert dW.shape == W.shape
+        assert db.shape == b.shape
+        assert dA_prev.shape == A_prev.shape
+
+        return dA_prev, dW, db
+
+    def _linear_activation_backward(self, dA: np.ndarray, cache, activation: str):
+        linear_cache, activation_cache = cache
+
+        if activation == RELU_ACTIVATION:
+            Z = activation_cache
+            dZ = np.array(dA, copy=True)
+            dZ[Z <= 0] = 0
+            dA_prev, dW, db = self._linear_backward(dZ, linear_cache)
+        elif activation == SIGMOID_ACTIVATION:
+            Z = activation_cache
+            s = 1 / (1 + np.exp(-Z))
+            dZ = dA * s * (1 - s)
+            dA_prev, dW, db = self._linear_backward(dZ, linear_cache)
+        else:
+            raise ValueError(f"Unknown activation: {activation}")
+
+        return dA_prev, dW, db
 
 
 class NeuralNetwork2L(BaseClass):
@@ -81,6 +115,8 @@ class NeuralNetworkNL(BaseClass):
         return parameters
 
     def _L_model_forward(self, X: np.ndarray, parameters: Dict[str, np.ndarray]):
+        # print("layer_dims =", self.layer_dims)
+        # print("parameter keys =", parameters.keys())
         caches = []
         A = X
         L = len(self.layer_dims) - 1
@@ -101,6 +137,66 @@ class NeuralNetworkNL(BaseClass):
         caches.append(cache)
 
         return AL, caches
+
+    def _L_model_backward(self, AL: np.ndarray, y: np.ndarray, caches):
+        grads = {}
+        L = len(self.layer_dims) - 1
+        m = AL.shape[1]
+        y = y.reshape(AL.shape)
+        # IMPORTANT: doing the first derivative by ourself and remaining in chain
+        dAL = -(y / AL - (1 - y) / (1 - AL))
+
+        curr_cache = caches[L - 1]
+        dA_prev, dW_temp, db_temp = self._linear_activation_backward(
+            dAL, curr_cache, SIGMOID_ACTIVATION
+        )
+        grads["dA" + str(L - 1)] = dA_prev
+        grads["dW" + str(L)] = dW_temp
+        grads["db" + str(L)] = db_temp
+
+        for l in reversed(range(L - 1)):
+            curr_cache = caches[l]
+
+            dA_prev, dW_temp, db_temp = self._linear_activation_backward(
+                grads["dA" + str(l + 1)], curr_cache, RELU_ACTIVATION
+            )
+
+            grads["dA" + str(l)] = dA_prev
+            grads["dW" + str(l + 1)] = dW_temp
+            grads["db" + str(l + 1)] = db_temp
+
+        return grads
+
+    def _update_parameters(self, grads, lr) -> None:
+        params = deepcopy(self.parameters)
+        L = len(self.layer_dims) - 1
+
+        for l in range(L):
+            params["W" + str(l + 1)] = params["W" + str(l + 1)] - (
+                lr * grads["dW" + str(l + 1)]
+            )
+            params["b" + str(l + 1)] = params["b" + str(l + 1)] - (
+                lr * grads["db" + str(l + 1)]
+            )
+
+        self.parameters = params
+
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        lr=0.075,
+        iter=3000,
+        print_cost=False,
+    ):
+        for i in range(iter):
+            AL, caches = self._L_model_forward(X, self.parameters)
+            cost = self._compute_cost(AL, y)
+            grads = self._L_model_backward(AL, y, caches)
+            self._update_parameters(grads, lr)
+            if print_cost and i % 100 == 0 or i == iter - 1:
+                print("Cost after iteration {}: {}".format(i, np.squeeze(cost)))
+        return self.parameters
 
     # TODO:
     def initialize_parameters_deep_he(self):
