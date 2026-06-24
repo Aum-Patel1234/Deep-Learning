@@ -167,7 +167,7 @@ class NeuralNetworkNL(BaseClass):
 
         return grads
 
-    def _update_parameters(self, grads, lr) -> None:
+    def _update_parameters_gd(self, grads, lr) -> None:
         params = deepcopy(self.parameters)
         L = len(self.layer_dims) - 1
 
@@ -181,6 +181,35 @@ class NeuralNetworkNL(BaseClass):
 
         self.parameters = params
 
+    def _random_mini_batches(self, X: np.ndarray, y: np.ndarray, batch_size=64, seed=0):
+        np.random.seed(seed)
+        m = X.shape[1]
+        assert m == y.shape[1]
+        num_batches = m // batch_size
+        permutation = list(np.random.permutation(m))
+
+        # 1. Shuffle the data
+        X_shuffled = X[:, permutation]
+        y_shuffled = y[:, permutation]
+        # print(X_shuffled.shape, y_shuffled.shape)
+
+        # 2. make _random_mini_batches
+        batches: list[tuple[np.ndarray, np.ndarray]] = []
+        for i in range(num_batches):
+            start_idx, end_idx = i * batch_size, (i + 1) * batch_size
+            mini_batch_X = X_shuffled[:, start_idx:end_idx]
+            mini_batch_y = y_shuffled[:, start_idx:end_idx]
+
+            batches.append((mini_batch_X, mini_batch_y))
+
+        if m % batch_size != 0:
+            mini_batch_X = X_shuffled[:, batch_size * num_batches : m]
+            mini_batch_y = y_shuffled[:, batch_size * num_batches : m]
+
+            batches.append((mini_batch_X, mini_batch_y))
+
+        return batches
+
     def fit(
         self,
         X: np.ndarray,
@@ -193,9 +222,10 @@ class NeuralNetworkNL(BaseClass):
             AL, caches = self._L_model_forward(X, self.parameters)
             cost = self._compute_cost(AL, y)
             grads = self._L_model_backward(AL, y, caches)
-            self._update_parameters(grads, lr)
+            self._update_parameters_gd(grads, lr)
             if print_cost and i % 100 == 0 or i == iter - 1:
                 print("Cost after iteration {}: {}".format(i, np.squeeze(cost)))
+            self._random_mini_batches()
         return self.parameters
 
     # TODO:
