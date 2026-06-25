@@ -1,6 +1,5 @@
-from functools import cache
 import numpy as np
-from typing import Any, Dict, Tuple, List
+from typing import Dict, List
 from copy import deepcopy
 
 SIGMOID_ACTIVATION: str = "sigmoid"
@@ -225,7 +224,6 @@ class NeuralNetworkNL(BaseClass):
             self._update_parameters_gd(grads, lr)
             if print_cost and i % 100 == 0 or i == iter - 1:
                 print("Cost after iteration {}: {}".format(i, np.squeeze(cost)))
-            self._random_mini_batches()
         return self.parameters
 
     # TODO:

@@ -7,8 +7,8 @@ from sklearn.model_selection import train_test_split
 from n_layer_nn import NeuralNetworkNL
 
 iris = load_iris()
-X = iris.data
-y = iris.target.reshape(-1, 1)
+X: np.ndarray = iris.data
+y: np.ndarray = iris.target.reshape(-1, 1)
 
 # One-hot encode labels
 encoder = OneHotEncoder(sparse_output=False)
