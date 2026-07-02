@@ -24,6 +24,12 @@ class BaseClass:
         else:
             raise ValueError(f"Unknown activation: {activation}")
 
+        # Forward propagation:
+        # Z = W @ A_prev + b
+        # A = activation(Z)
+        #
+        # linear_cache stores (A_prev, W, b)
+        # activation_cache stores Z
         cache = (linear_cache, activation_cache)
         return A, cache
 
@@ -32,7 +38,7 @@ class BaseClass:
         # row->features, col->data
         assert A.shape == Y.shape
         m = Y.shape[1]
-        cost = (-1.0 / m) * np.sum(Y * np.log(A) + (1 - Y) * np.log(1 - A))
+        cost = (-1.0 / m) * np.sum(Y * np.log(A) + (1 - Y) * np.log(1 - A))  # BCE
         return np.squeeze(cost)
 
     # TODO: derive them
@@ -40,6 +46,12 @@ class BaseClass:
         A_prev, W, b = cache
         m = A_prev.shape[1]
 
+        # Eq:
+        #   Z = Wx+b  (x=A)
+        #   dW = A_prev
+        #   db = 1
+        #   dA_prev = W
+        #   all are in chain rule with dZ
         dW = (1 / m) * dZ @ A_prev.T
         db = (1 / m) * np.sum(dZ, axis=1, keepdims=True)
         dA_prev = W.T @ dZ
@@ -55,11 +67,18 @@ class BaseClass:
 
         if activation == RELU_ACTIVATION:
             Z = activation_cache
+            # IMPORTANT: derivative of RELU_ACTIVATION. How?
+            # first max(x, 0)-> 1 if x else 0
+            # Apply chain rule:
+            # dZ = dA * ReLU'(Z)
             dZ = np.array(dA, copy=True)
             dZ[Z <= 0] = 0
             dA_prev, dW, db = self._linear_backward(dZ, linear_cache)
         elif activation == SIGMOID_ACTIVATION:
             Z = activation_cache
+            # derivative of sigmoid
+            # d = a*(1-a)
+            # dA is the chain rule derivative from forward layers
             s = 1 / (1 + np.exp(-Z))
             dZ = dA * s * (1 - s)
             dA_prev, dW, db = self._linear_backward(dZ, linear_cache)
@@ -143,6 +162,7 @@ class NeuralNetworkNL(BaseClass):
         m = AL.shape[1]
         y = y.reshape(AL.shape)
         # IMPORTANT: doing the first derivative by ourself and remaining in chain
+        # Derivative of binary cross-entropy loss with respect to AL.
         dAL = -(y / AL - (1 - y) / (1 - AL))
 
         curr_cache = caches[L - 1]

@@ -12,7 +12,7 @@ def zero_pad(X: np.ndarray, pad: int) -> np.ndarray:
     X_pad -- padded image of shape (m, n_H + 2 * pad, n_W + 2 * pad, n_C)
     """
     if X.ndim != 4:
-        ValueError("X.ndim != 3")
+        ValueError("X.ndim != 4")
 
     m, n_h, n_w, n_c = X.shape
     ans = np.zeros((m, n_h + 2 * pad, n_w + 2 * pad, n_c), dtype=X.dtype)
@@ -107,6 +107,14 @@ def conv_backward(dZ, cache):
 
 
 def pool_backward(dA, cache, mode="max"):
+    pass
+
+
+def _L_conv_forward(X: np.ndarray, params: dict):
+    pass
+
+
+def _L_conv_backward(AL: np.ndarray, y: np.ndarray, cache):
     pass
 
 

@@ -35,36 +35,36 @@ y_test = y_test.T
 layer_dims = [4, 16, 8, 3]
 nn = NeuralNetworkNL(layer_dims)
 
-# parameters = nn.fit(
-#     X_train,
-#     y_train,
-#     lr=0.05,
-#     iter=5000,
-#     print_cost=True,
-# )
-#
-# # Predict
-# AL_test, _ = nn._L_model_forward(X_test, parameters)
-#
-# preds = np.argmax(AL_test, axis=0)
-# true_labels = np.argmax(y_test, axis=0)
-#
-# accuracy = np.mean(preds == true_labels)
-#
-# print("\nTest Accuracy:", accuracy)
-#
-# # Show a few predictions
-# print("\nPredictions:", preds[:10])
-# print("Ground Truth:", true_labels[:10])
+parameters = nn.fit(
+    X_train,
+    y_train,
+    lr=0.05,
+    # iter=2000,
+    print_cost=True,
+)
 
-# batches = nn._random_mini_batches(X_train, y_train)
-# print(X_train.shape, y_train.shape)
-# flag = True
-# for batch in batches:
-#     print(batch[0].shape, " , ", batch[1].shape)
-#     if flag:
-#         print("x real - ", X_train[:, :3], "\nx_shuffled_batch - ", batch[0][:, :3])
-#         flag = False
+# Predict
+AL_test, _ = nn._L_model_forward(X_test, parameters)
+
+preds = np.argmax(AL_test, axis=0)
+true_labels = np.argmax(y_test, axis=0)
+
+accuracy = np.mean(preds == true_labels)
+
+print("\nTest Accuracy:", accuracy)
+
+# Show a few predictions
+print("\nPredictions:", preds[:10])
+print("Ground Truth:", true_labels[:10])
+
+batches = nn._random_mini_batches(X_train, y_train)
+print(X_train.shape, y_train.shape)
+flag = True
+for batch in batches:
+    print(batch[0].shape, " , ", batch[1].shape)
+    if flag:
+        print("x real - ", X_train[:, :3], "\nx_shuffled_batch - ", batch[0][:, :3])
+        flag = False
 
 
 def test_random_mini_batches():
@@ -78,9 +78,9 @@ def test_random_mini_batches():
     mini_batches = nn._random_mini_batches(X, Y, mini_batch_size)
     n_batches = len(mini_batches)
 
-    assert n_batches == math.ceil(
-        m / mini_batch_size
-    ), f"Wrong number of mini batches. {n_batches} != {math.ceil(m / mini_batch_size)}"
+    assert n_batches == math.ceil(m / mini_batch_size), (
+        f"Wrong number of mini batches. {n_batches} != {math.ceil(m / mini_batch_size)}"
+    )
     for k in range(n_batches - 1):
         assert mini_batches[k][0].shape == (
             nx,
@@ -97,14 +97,16 @@ def test_random_mini_batches():
         assert mini_batches[n_batches - 1][0].shape == (
             nx,
             m % mini_batch_size,
-        ), f"Wrong shape in the last minibatch. {mini_batches[n_batches - 1][0].shape} != {(nx, m % mini_batch_size)}"
+        ), (
+            f"Wrong shape in the last minibatch. {mini_batches[n_batches - 1][0].shape} != {(nx, m % mini_batch_size)}"
+        )
 
-    assert np.allclose(
-        mini_batches[0][0][0][0:3], [294912, 86016, 454656]
-    ), "Wrong values. Check the indexes used to form the mini batches"
-    assert np.allclose(
-        mini_batches[-1][0][-1][0:3], [1425407, 1769471, 897023]
-    ), "Wrong values. Check the indexes used to form the mini batches"
+    assert np.allclose(mini_batches[0][0][0][0:3], [294912, 86016, 454656]), (
+        "Wrong values. Check the indexes used to form the mini batches"
+    )
+    assert np.allclose(mini_batches[-1][0][-1][0:3], [1425407, 1769471, 897023]), (
+        "Wrong values. Check the indexes used to form the mini batches"
+    )
 
     print("\033[92mAll tests passed!")
 
